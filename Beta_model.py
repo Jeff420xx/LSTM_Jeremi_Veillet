@@ -9,9 +9,7 @@ from sklearn.metrics import mean_squared_error
 from torch.utils.data import TensorDataset, DataLoader
 import os
 
-# ==========================
-# 1. Configuration Dynamique
-# ==========================
+
 TARGET_TICKER = "ARM"  
 def get_data(ticker, start="2020-01-01", end="2026-06-05"):
     print(f" Téléchargement de {ticker} ...")
@@ -23,16 +21,14 @@ def get_data(ticker, start="2020-01-01", end="2026-06-05"):
 
 data = get_data(TARGET_TICKER)
 
-# Log-returns pour la stabilité
+# Log-returns for stability
 data['Log_Ret'] = np.log(data['Close'] / data['Close'].shift(1))
 data = data.dropna()
 
 log_returns = data[['Log_Ret']].values
 close_prices = data[["Close"]].values
 
-# ==========================
-# 2. Fenêtre glissante & Séquences
-# ==========================
+
 window_size = 2000   
 seq_length = 180      
 
@@ -64,9 +60,8 @@ X_test, y_test   = torch.tensor(X_test, dtype=torch.float32),  torch.tensor(y_te
 
 train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=32, shuffle=True)
 
-# ==========================
-# 3. Modèle & Early Stopping
-# ==========================
+#  Model & Early Stopping
+
 class LSTMModel(nn.Module):
     def __init__(self, input_size=1, hidden_size=64, num_layers=2, output_size=1):
         super().__init__()
@@ -101,10 +96,8 @@ class EarlyStopping:
 criterion = nn.L1Loss()
 
 
-# ==========================
-# 4. Entraînement
-# ==========================
-epochs = 20     # Augmenté car l'Early Stopping gérera l'arrêt optimal
+
+epochs = 20    
 n_runs = 5      
 results_rmse = []
 
@@ -153,9 +146,7 @@ for run in range(n_runs):
 
     torch.save(model.state_dict(), checkpoint_path)
 
-# ======================================================
-# 5. Prédiction Récursive du Futur
-# ======================================================
+
 n_future = 10 
 model.eval()
 
@@ -181,9 +172,7 @@ for lr in future_log_rets:
 
 future_dates = pd.bdate_range(start=data.index[-1] + pd.Timedelta(days=1), periods=n_future)
 
-# ======================================================
-# 6. Visualisation Finale
-# ======================================================
+
 plt.figure(figsize=(16, 7))
 
 # --- Graph 1 : RMSE ---
@@ -192,7 +181,7 @@ plt.plot(range(1, len(results_rmse) + 1), results_rmse, marker='o', color='green
 plt.title(f"Convergence de l'erreur ({TARGET_TICKER})")
 plt.grid(True, alpha=0.3)
 
-# --- Graph 2 : Passé + Futur ---
+# --- Graph 2 : Past + Future ---
 plt.subplot(1, 2, 2)
 with torch.no_grad():
     test_preds_scaled = model(X_test).numpy()
